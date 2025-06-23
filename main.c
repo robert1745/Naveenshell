@@ -1,39 +1,49 @@
-// main.c
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <sched.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MAX_INPUT 1024
+#define MAX_ARGS 64
+
+// Function to parse the input line into arguments
+void parse_input(char *input, char **args) {
+    int i = 0;
+    args[i] = strtok(input, " \t\n");
+    while (args[i] != NULL) {
+        i++;
+        args[i] = strtok(NULL, " \t\n");
+    }
+}
 
 int main() {
     char input[MAX_INPUT];
+    char *args[MAX_ARGS];
 
     while (1) {
-        printf("naveenshell> ");          // Show prompt
-        fflush(stdout);
+        write(STDOUT_FILENO, "naveenshell> ", 13);
 
-        if (!fgets(input, MAX_INPUT, stdin)) {
-            break;  // Handle Ctrl+D
-        }
+        ssize_t nread = read(STDIN_FILENO, input, MAX_INPUT);
+        if (nread <= 0) break;
 
-        // Remove newline at the end
-        input[strcspn(input, "\n")] = 0;
+        input[nread] = '\0'; // terminate the string
 
-        if (strcmp(input, "exit") == 0) {
-            break;
-        }
+        if (strcmp(input, "exit\n") == 0) break;
 
-        // Fork and exec to run the command
+        parse_input(input, args);
+        if (args[0] == NULL) continue;
+
         pid_t pid = fork();
+
         if (pid == 0) {
-            // Child
-            execlp(input, input, NULL);
-            perror("Command failed");
-            exit(1);
+            // In child
+            execvp(args[0], args);
+            write(STDERR_FILENO, "Command not found\n", 19);
+            _exit(1);
         } else {
-            // Parent
+            // In parent
             wait(NULL);
         }
     }

@@ -1,10 +1,14 @@
-all : hello
+# Makefile for NaveenShell
 
-hello: hello.o
-	gcc -o hello hello.o
+CC = gcc
+CFLAGS = -Wall -g
+TARGET = naveenshell
+SRCS = main.c
 
-hello.o: hello.c
-	gcc -c hello.c
+all: $(TARGET)
+
+$(TARGET): $(SRCS)
+	$(CC) $(CFLAGS) -o $@ $(SRCS)
 
 clean:
-	rm -f *.o hello
+	rm -f $(TARGET)
